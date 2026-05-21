@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import LandingPage from "./components/LandingPage.jsx";
 import DataManager from "./components/DataManager.jsx";
 import Computations from "./components/Computations.jsx";
 import NLChat from "./components/NLChat.jsx";
@@ -25,9 +26,11 @@ export default function App() {
   const [apiKey, setApiKey] = useState(() => localStorage.getItem("analytix_api_key") || "");
   const [showSettings, setShowSettings] = useState(false);
   const [toast, setToast] = useState(null);
+  const [showLanding, setShowLanding] = useState(true);
 
   const showToast = useCallback(msg => { setToast(msg); }, []);
   const advanceToCompute = useCallback(() => setTab("compute"), []);
+  const enterDashboard = useCallback(() => setShowLanding(false), []);
 
   const saveApiKey = key => {
     setApiKey(key);
@@ -48,6 +51,10 @@ export default function App() {
   }, [data]);
 
   const aiAvailable = Boolean(apiKey);
+
+  if (showLanding) {
+    return <LandingPage onEnter={enterDashboard} />;
+  }
 
   return (
     <div className="shell">
