@@ -1,14 +1,3 @@
-# Ignore local dependencies
-node_modules/
-**/node_modules/
-
-# Ignore build outputs
-dist/
-**/dist/
-
-# Vite / local env
+node_modules
+dist
 .env
-
-# OS files
-.DS_Store
-Thumbs.db

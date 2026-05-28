@@ -1,23 +1,28 @@
 {
   "name": "analyticsx",
+  "version": "1.0.0",
+  "description": "AI-powered analytical platform for small datasets",
   "private": true,
-  "version": "0.0.1",
   "type": "module",
   "scripts": {
     "dev": "cd AnalyticsX && npm run dev",
     "build": "cd AnalyticsX && npm run build",
-    "preview": "cd AnalyticsX && npm run preview",
-    "nested-install": "cd AnalyticsX && npm install"
+    "preview": "cd AnalyticsX && npm run preview"
   },
   "dependencies": {
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "framer-motion": "^11.0.0",
+    "lucide-react": "^0.526.0",
+    "papaparse": "^5.4.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "recharts": "^2.12.7",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
-    "@vitejs/plugin-react": "^4.0.0",
-    "vite": "^4.3.9",
-    "tailwindcss": "^3.3.0",
-    "postcss": "^8.4.24",
-    "autoprefixer": "^10.4.14"
+    "@vitejs/plugin-react": "^5.0.0",
+    "autoprefixer": "^10.4.19",
+    "postcss": "^8.4.35",
+    "tailwindcss": "^3.4.4",
+    "vite": "^8.0.14"
   }
 }
