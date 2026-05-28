@@ -1,0 +1,14 @@
+# Ignore local dependencies
+node_modules/
+**/node_modules/
+
+# Ignore build outputs
+dist/
+**/dist/
+
+# Vite / local env
+.env
+
+# OS files
+.DS_Store
+Thumbs.db
