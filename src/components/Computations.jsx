@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { getNumericCols, getTextCols, computeStat, allStats, filterRows, groupBy, exportToCSV, fmt, correlation, sortRows, textFrequency } from "../utils/data.js";
+import { initializeColumnState } from "../utils/dataTransform.js";
 
 function SummaryTable({ rows, headers }) {
   const numCols = getNumericCols(headers, rows);
@@ -35,9 +36,24 @@ function SummaryTable({ rows, headers }) {
   );
 }
 
+function DataTablePreview({ headers, rows, maxRows = 100 }) {
+  const numCols = getNumericCols(headers, rows);
+  return (
+    <div className="table-wrap" style={{ maxHeight: 320 }}>
+      <table>
+        <thead><tr><th>#</th>{headers.map(h => <th key={h}>{h}</th>)}</tr></thead>
+        <tbody>
+          {rows.slice(0, maxRows).map((row, i) => (
+            <tr key={i}><td className="row-num">{i + 1}</td>{headers.map(h => <td key={h} className={numCols.includes(h) ? "num-cell" : ""}>{row[h] ?? ""}</td>)}</tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 export default function Computations({ data, setData, toast }) {
-  const numCols = useMemo(() => data ? getNumericCols(data.headers, data.rows) : [], [data]);
-  const allCols = data?.headers || [];
+  const colState = useMemo(() => initializeColumnState(data), [data]);
 
   const [aggCol, setAggCol] = useState("");
   const [aggOp, setAggOp] = useState("sum");
@@ -68,24 +84,29 @@ export default function Computations({ data, setData, toast }) {
   const [computedFormula, setComputedFormula] = useState("");
   const [computedResult, setComputedResult] = useState(null);
 
+  // Initialize column state on data change
   useEffect(() => {
-    if (numCols.length) { setAggCol(numCols[0]); setFilterCol(numCols[0]); setGroupAggCol(numCols[0]); }
-    if (allCols.length) setGroupCol(allCols[0]);
-  }, [numCols, allCols]);
-
-  const textCols = useMemo(() => data ? getTextCols(data.headers, data.rows) : [], [data]);
-
-  useEffect(() => {
-    if (numCols.length) { setAggCol(numCols[0]); setFilterCol(numCols[0]); setGroupAggCol(numCols[0]); setCorrX(numCols[0]); setCorrY(numCols[1] || numCols[0]); setRankCol(numCols[0]); }
-    if (allCols.length) setGroupCol(allCols[0]);
-    if (textCols.length) setTextCol(textCols[0]);
-  }, [numCols, allCols, textCols]);
+    if (colState.numCols.length) {
+      setAggCol(colState.firstNumCol);
+      setFilterCol(colState.firstNumCol);
+      setGroupAggCol(colState.firstNumCol);
+      setCorrX(colState.firstNumCol);
+      setCorrY(colState.secondNumCol);
+      setRankCol(colState.firstNumCol);
+    }
+    if (colState.allCols.length) setGroupCol(colState.firstAllCol);
+    if (colState.textCols.length) setTextCol(colState.firstTextCol);
+  }, [colState]);
 
   if (!data) return (
     <div className="panel">
       <div className="empty"><div className="empty-icon">🔢</div><div className="empty-msg">No Data Loaded</div><div className="empty-hint">Go to Data Manager to load a dataset first.</div></div>
     </div>
   );
+
+  const numCols = colState.numCols;
+  const allCols = colState.allCols;
+  const textCols = colState.textCols;
 
   const runAgg = () => {
     const v = computeStat(data.rows, aggCol, aggOp);
@@ -96,6 +117,14 @@ export default function Computations({ data, setData, toast }) {
     const rows = filterRows(data.rows, filterCol, filterOp, filterVal);
     setFilteredRows(rows);
     toast(`Filter returned ${rows.length} rows`);
+  };
+
+  const applyFilter = () => {
+    if (filteredRows) {
+      setData({ ...data, rows: filteredRows });
+      setFilteredRows(null);
+      toast(`✓ Applied filter — ${filteredRows.length} rows`);
+    }
   };
 
   const runGroup = () => {
@@ -117,6 +146,14 @@ export default function Computations({ data, setData, toast }) {
     setRankedRows(sorted);
   };
 
+  const applyRank = () => {
+    if (rankedRows) {
+      setData({ ...data, rows: rankedRows });
+      setRankedRows(null);
+      toast(`✓ Applied ranking — ${rankedRows.length} rows`);
+    }
+  };
+
   const runFrequency = () => {
     if (!textCol) return;
     const freq = textFrequency(data.rows, textCol);
@@ -128,7 +165,6 @@ export default function Computations({ data, setData, toast }) {
     try {
       const newRows = data.rows.map(row => {
         const newRow = { ...row };
-        // Create a function that has access to column values
         const computeFn = new Function(...data.headers, `return (${computedFormula});`);
         const result = computeFn(...data.headers.map(h => row[h]));
         newRow[computedColName] = isNaN(result) ? result : Number(result);
@@ -208,7 +244,10 @@ export default function Computations({ data, setData, toast }) {
             <div className="result-pill">
               {filteredRows.length} / {data.rows.length} rows match
               {filteredRows.length > 0 && (
-                <button className="btn btn-ghost btn-xs" style={{ marginLeft: 12 }} onClick={() => exportToCSV(data.headers, filteredRows, "filtered.csv")}>⤓ Export</button>
+                <>
+                  <button className="btn btn-ghost btn-xs" style={{ marginLeft: 12 }} onClick={() => exportToCSV(data.headers, filteredRows, "filtered.csv")}>⤓ Export</button>
+                  <button className="btn btn-green btn-xs" style={{ marginLeft: 6 }} onClick={applyFilter}>✓ Apply to Dataset</button>
+                </>
               )}
             </div>
           )}
@@ -308,7 +347,7 @@ export default function Computations({ data, setData, toast }) {
               </div>
               <button className="btn btn-primary" style={{ flex: 1 }} onClick={runRank} disabled={!rankCol}>Show Rows</button>
             </div>
-            {rankedRows && <div className="result-pill">Showing {rankedRows.length} rows sorted by {rankCol} ({rankOrder === "desc" ? "highest" : "lowest"})</div>}
+            {rankedRows && <div className="result-pill">Showing {rankedRows.length} rows sorted by {rankCol} ({rankOrder === "desc" ? "highest" : "lowest"}) <button className="btn btn-green btn-xs" style={{ marginLeft: 12 }} onClick={applyRank}>✓ Apply to Dataset</button></div>}
           </div>
           <div>
             <label>Text Frequency</label>

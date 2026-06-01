@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import LandingPage from "./components/LandingPage.jsx";
 import DataManager from "./components/DataManager.jsx";
+import DataCleaning from "./components/DataCleaning.jsx";
 import Computations from "./components/Computations.jsx";
 import NLChat from "./components/NLChat.jsx";
 import Visualizations from "./components/Visualizations.jsx";
@@ -9,6 +10,7 @@ import SettingsModal from "./components/SettingsModal.jsx";
 
 const TABS = [
   { id: "data",    label: "Data Manager",  icon: "🗂" },
+  { id: "clean",   label: "Data Cleaning", icon: "🧹" },
   { id: "compute", label: "Computations",  icon: "🔢" },
   { id: "chat",    label: "NL Query",      icon: "💬" },
   { id: "viz",     label: "Visualize",     icon: "📊" },
@@ -90,6 +92,7 @@ export default function App() {
       {/* Main content */}
       <main className="content">
         {tab === "data"    && <DataManager data={data} setData={setData} toast={showToast} onDataLoaded={advanceToCompute} />}
+        {tab === "clean"   && <DataCleaning data={data} setData={setData} toast={showToast} />}
         {tab === "compute" && <Computations data={data} setData={setData} toast={showToast} />}
         {tab === "chat"    && <NLChat data={data} apiKey={apiKey} toast={showToast} />}
         {tab === "viz"     && <Visualizations data={data} toast={showToast} />}

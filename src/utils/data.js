@@ -38,6 +38,25 @@ export async function parseJSON(file) {
   return { headers, rows };
 }
 
+export async function parseExcel(file) {
+  const arrayBuffer = await file.arrayBuffer();
+  const workbook = XLSX.read(arrayBuffer, { type: "array" });
+  const sheetName = workbook.SheetNames[0];
+  const worksheet = workbook.Sheets[sheetName];
+  const data = XLSX.utils.sheet_to_json(worksheet);
+  if (!data.length) throw new Error("Excel sheet is empty.");
+  const headers = Object.keys(data[0]);
+  const rows = data.map(row => {
+    const r = {};
+    headers.forEach(h => {
+      const v = row[h] ?? "";
+      r[h] = v === "" ? "" : isNaN(v) ? String(v) : Number(v);
+    });
+    return r;
+  });
+  return { headers, rows };
+}
+
 export async function parseFile(file) {
   const ext = file.name.split(".").pop().toLowerCase();
   if (["xlsx", "xls"].includes(ext)) return parseExcel(file);
